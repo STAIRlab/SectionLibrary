@@ -16,14 +16,9 @@ keywords = [
 #packages = find
 install_requires = [
   "numpy",
-  "scipy",
-  "tqdm",
   "quakeio",
   "matplotlib",
   "plotly",
-  "pandas",
-  "control",
-  "sdof",
   "opensees",
   "quakeio"
 ]
