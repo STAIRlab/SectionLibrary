@@ -4,20 +4,11 @@ E-mail: guojj@tongji.edu.cn/guojj_ce@163.com
 Environemet: Successfully excucted in python 3.8    
 --------------------------------------------------------------------------
 
+# Examples
 
-
-## Tutorials      
-1. download the zip file.
-2. download gmsh.exe ([download gmsh](https://gmsh.info/)) that satifies your operation system,and put gmsh.exe to your unzip file in step 1.     
-
-> Note: If you encount AttributeError: module 'pygmsh' has no attribute 'opencascade', please uninstall current pygmsh module and install pygmsh with version 6.1.1
-
-# sectionFiberDivide
-Generate sectional fibers based on python programming
-
-The followings are some basic examples, and you can also find them in the download files.
 
 ## Circle section fiber generate
+
 <img src="https://github.com/Junjun1guo/sectionFiberDivide/raw/main/circle.jpg" width =40% height =40% div align="center">
 
 ```python
