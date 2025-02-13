@@ -7,9 +7,10 @@
 import matplotlib.pyplot as plt
 from fiberGenerate import CircleSection,PolygonSection,figureSize
 ######################################################################################
-def circleSection(sectionName,outD,coverThick,outbarD,outbarDist,coreSize,coverSize,plot=False,inD=None,inBarD=None,inBarDist=None):
+def circleSection(outD,coverThick,outbarD,outbarDist,
+                  coreSize,coverSize,plot=False,inD=None,inBarD=None,inBarDist=None, file=None):
     """
-    #####################################################################
+
     def circleSection(outD,coverThick,outbarD,outbarDist,coreSize,coverSize,plot=False,inD=None,inBarD=None,inBarDist=None)
     Input:
     ---outD # the diameter of the outside circle
@@ -26,7 +27,7 @@ def circleSection(sectionName,outD,coverThick,outbarD,outbarDist,coreSize,coverS
     ---coreFiber,coverFiber,barFiber #core concrete, cover concrete anb bar fibers information
        for eaxample coreFiber=[(y1,z1,area1),(y2,y2,area2),...], y1,z1 is the fiber coordinate values in loacal y-z plane
        area1 is the fiber area
-    #####################################################################
+
     #######################---solid circle example---#####################
     outD=2  # the diameter of the outside circle
     coverThick=0.1  # the thinckness of the cover concrete
@@ -36,7 +37,7 @@ def circleSection(sectionName,outD,coverThick,outbarD,outbarDist,coreSize,coverS
     coverSize=0.2  # the size of cover concrete fiber
     plotState=False  # plot the fiber or not plot=True or False
     corFiber,coverFiber,barFiber=circleSection(outD, coverThick, outbarD, outbarDist, coreSize, coverSize,plotState)
-    ######################################################################
+    ###################
     ##################---circle with a hole example---####################
     outD = 2  # the diameter of the outside circle
     coverThick = 0.06  # the thinckness of the cover concrete
@@ -50,12 +51,13 @@ def circleSection(sectionName,outD,coverThick,outbarD,outbarDist,coreSize,coverS
     inBarDist=0.15 # inside bar space
     corFiber, coverFiber, barFiber = circleSection(outD, coverThick, outbarD, outbarDist, coreSize, coverSize,
                                                    plotState,inD,inBarD,inBarDist)
-    ######################################################################
+    ###################
     """
-    circleInstance = CircleSection(coverThick, outD, inD)  # call the circle section generate class
+    print(coverThick, outD, inD)
+    circleInstance = CircleSection(coverThick, outD, inD)
     xListPlot, yListPlot = circleInstance.initSectionPlot()  # plot profile of the circle
     # generate core concrete fiber elements
-    coreFiber, pointsPlot, trianglesPlot = circleInstance.coreMesh(coreSize)
+    coreFiber, pointsPlot, trianglesPlot = circleInstance.core_mesh(coreSize)
     # generate cover concrete fiber elements
     coverFiber, coverXListPlot, coverYListPlot, xBorderPlot, yBorderPlot = circleInstance.coverMesh(coverSize)
     # generate the bar fiber elements
@@ -77,8 +79,10 @@ def circleSection(sectionName,outD,coverThick,outbarD,outbarDist,coreSize,coverS
 
         for barx, bary in zip(barXListPlot, barYListPlot):
             ax.scatter(barx, bary, s=10, c="k", zorder=3)
-        plt.savefig(sectionName+".eps")
-        plt.savefig(sectionName+".jpg")
+        
+        if file is not None:
+            plt.savefig(file+".eps")
+            plt.savefig(file+".jpg")
         plt.show()
     else:
         pass
@@ -86,9 +90,9 @@ def circleSection(sectionName,outD,coverThick,outbarD,outbarDist,coreSize,coverS
 ######################################################################################
 ######################################################################################
 ######################################################################################
-def polygonSection(sectionName,outSideNode,outSideEle,coverThick,coreSize,coverSize,outBarD,outBarDist,\
+def polygonSection(outSideNode,outSideEle,coverThick,coreSize,coverSize,outBarD,outBarDist,\
                    plot=False,autoBarMesh=True,userBarNodeDict=None,userBarEleDict=None,inSideNode=None,\
-                   inSideEle=None,inBarD=None,inBarDist=None):
+                   inSideEle=None,inBarD=None,inBarDist=None, sectionName=None):
     """
     Input:
     ---outSideNode # the outside vertexes consecutively numbering and coordinate values in local y-z plane in dict container
@@ -110,88 +114,6 @@ def polygonSection(sectionName,outSideNode,outSideEle,coverThick,coreSize,coverS
     ---coreFiber,coverFiber,barFiber #core concrete, cover concrete anb bar fibers information
        for eaxample coreFiber=[(y1,z1,area1),(y2,y2,area2),...], y1,z1 is the fiber coordinate values in loacal y-z plane
        area1 is the fiber area
-
-    #####################################################################
-    ################---solid polygon section example---##################
-    # the outside vertexes consecutively numbering and coordinate values in local y-z plane in dict container
-     outSideNode = {1: (3.5, 3), 2: (1.5, 5), 3: (-1.5, 5), 4: (-3.5, 3), 5: (-3.5, -3), 6: (-1.5, -5), 7: (1.5, -5),
-                    8: (3.5, -3)}
-    # the outside vertexes loop consecutively numbering in dict container
-    outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 1)}
-    coverThick = 0.06  # the thinck of the cover concrete
-    coreSize = 0.2  # the size of the core concrete fiber elements
-    coverSize = 0.3  # the size of the cover concrete fiber elements
-    outBarD = 0.032  # outside bar diameter
-    outBarDist = 0.2  # outside bar space
-    plotState=True  # plot the fiber or not plot=True or False
-    autoBarMesh=True #if false provide the barControlNodeDict and barEleDict
-    userBarNodeDict=None # {1:(y1,z1),2:(y2,z2),...} bar line end nodes
-    userBarEleDict=None # {1:(nodeI,nodeJ,barD,barDist),...}  bar line end nodes number and diameter and distance
-    coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
-									   outBarD, outBarDist,plotState,autoBarMesh)
-    #####################################################################
-    ############---PolygenThreeHole section fiber generate example---##############
-	outSideNode = {1: (0, 0), 2: (7, 0), 3: (7,3), 4: (0, 3)}
-	# the outside vertexes loop consecutively numbering in dict container
-	outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4,1)}
-	# the inside vertexes consecutively numbering and coordinate values in local y-z plane in list container
-	inSideNode = [
-	 {1: (1, 1), 2: (2, 1), 3: (2, 2), 4: (1, 2)},
-	 {1: (3, 1), 2: (4, 1), 3: (4, 2), 4: (3, 2)},
-	 {1: (5, 1), 2: (6, 1), 3: (6, 2), 4: (5, 2)}]
-	# the inside vertexes loop consecutively numbering in dict container
-	inSideEle = [{1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)},
-			  {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)},
-			  {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)}]
-	coverThick = 0.06  # the thinck of the cover concrete
-	coreSize = 0.2  # the size of the core concrete fiber elements
-	coverSize = 0.3  # the size of the cover concrete fiber elements
-	outBarD = 0.032  # outside bar diameter
-	outBarDist = 0.2  # outside bar space
-	plotState = True  # plot the fiber or not plot=True or False
-	autoBarMesh=True #if false provide the barControlNodeDict and barEleDict
-	userBarNodeDict=None
-	userBarEleDict=None
-	inBarD=0.032  # inside bar diameter (None)
-	inBarDist=0.2  # inside bar space (None)
-	coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
-									 outBarD, outBarDist,plotState,autoBarMesh,userBarNodeDict,userBarEleDict,\
-		 inSideNode,inSideEle,inBarD,inBarDist)
-    #####################################################################
-    ############---polygon with one hole section user bar mesh example example---###########
-	from sectionFiberMain import polygonSection
-	# the outside vertexes consecutively numbering and coordinate values in local y-z plane in dict container
-	 outSideNode = {1: (2.559, 2.1), 2: (-2.559, 2.1), 3: (-2.559, 1.6), 4: (-3.059, 1.6), 5: (-3.059, -1.6),
-					6: (-2.559, -1.6), 7: (-2.559, -2.1), 8: (2.559, -2.1), 9: (2.559, -1.6), 10: (3.059, -1.6), 11: (3.059, 1.6),
-					12: (2.559, 1.6)}
-	 # the outside vertexes loop consecutively numbering in dict container
-	 outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 9), 9: (9, 10),\
-				   10: (10, 11), 11: (11, 12), 12: (12, 1)}
-	 # the inside vertexes consecutively numbering and coordinate values in local y-z plane in list container
-	 inSideNode = [{1: (1.809, 1.35), 2: (-1.809, 1.35), 3: (-2.309, 0.85), 4: (-2.309, -0.85), 5: (-1.809, -1.35), \
-					6: (1.809, -1.35), 7: (2.309, -0.85), 8: (2.309, 0.85)}] ##(None)
-	 # the inside vertexes loop consecutively numbering in dict container
-	 inSideEle = [{1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 1)}]
-	 coverThick = 0.06  # the thinck of the cover concrete
-	 coreSize = 0.2  # the size of the core concrete fiber elements
-	 coverSize = 0.3  # the size of the cover concrete fiber elements
-	 outBarD = 0.032  # outside bar diameter(None)
-	 outBarDist = 0.2  # outside bar space (None)
-	 plotState=True  # plot the fiber or not plot=True or False
-	 autoBarMesh=False #if false provide the barControlNodeDict and barEleDict
-	 userBarNodeDict={1: (2.975, 1.516), 2: (2.475, 1.516), 3: (2.475, 2.016), 4: (-2.475, 2.016), 5: (-2.475, 1.516),
-					6: (-2.975, 1.516),7: (-2.975, -1.516), 8: (-2.475, -1.516), 9: (-2.475, -2.016), 10: (2.475, -2.016),
-					11: (2.475, -1.516), 12: (2.975, -1.516)} #{1:(y1,z1),2:(y2,z2),...} （None)
-	 userBarEleDict={1: (1, 2,0.01,0.2), 2: (2, 3,0.01,0.2), 3: (3, 4,0.01,0.2), 4: (4, 5,0.01,0.2),\
-					 5: (6, 5,0.01,0.2), 6: (5, 2,0.01,0.2), 7: (7, 8,0.01,0.2), 8: (8, 9,0.01,0.2), 9: (9, 10,0.01,0.2),
-				   10: (10, 11,0.01,0.2), 11: (12, 11,0.01,0.2), 12: (11, 8,0.01,0.2),\
-					 }  #{1:(nodeI,nodeJ,barD,barDist)}（None)
-	 inBarD=0.032  # inside bar diameter (None)
-	 inBarDist=0.2  # inside bar space (None)
-	 coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
-										 outBarD, outBarDist,plotState,autoBarMesh,userBarNodeDict,userBarEleDict,\
-			 inSideNode,inSideEle,inBarD,inBarDist)
-    ######################################################################
     """
     sectInstance = PolygonSection(outSideNode, outSideEle, inSideNode, inSideEle)
     originalNodeListPlot = sectInstance.sectPlot()  # [([x1,x2],[y1,y2]),([].[])]
@@ -200,7 +122,7 @@ def polygonSection(sectionName,outSideNode,outSideEle,coverThick,coreSize,coverS
         sectInstance = PolygonSection(outSideNode, outSideEle)
         originalNodeListPlot = sectInstance.sectPlot()  # [([x1,x2],[y1,y2]),([].[])]
         outLineList, coverlineListPlot = sectInstance.coverLinePlot(coverThick)
-        coreFiber, pointsPlot, trianglesPlot = sectInstance.coreMesh(coreSize, outLineList)
+        coreFiber, pointsPlot, trianglesPlot = sectInstance.core_mesh(coreSize, outLineList)
         coverFiber, outNodeReturnPlot, inNodeReturnPlot = sectInstance.coverMesh(coverSize, coverThick)
         if autoBarMesh==True:
             barFiber, barXListPlot, barYListPlot = sectInstance.barMesh(outBarD, outBarDist, coverThick)
@@ -214,7 +136,7 @@ def polygonSection(sectionName,outSideNode,outSideEle,coverThick,coreSize,coverS
         originalNodeListPlot = sectInstance.sectPlot()
         outLineList, coverlineListPlot = sectInstance.coverLinePlot(coverThick)
         inLineList, innerLineListPlot = sectInstance.innerLinePlot(coverThick)
-        coreFiber, pointsPlot, trianglesPlot = sectInstance.coreMesh(coreSize, outLineList, inLineList)
+        coreFiber, pointsPlot, trianglesPlot = sectInstance.core_mesh(coreSize, outLineList, inLineList)
         coverFiber, outNodeReturnPlot, inNodeReturnPlot = sectInstance.coverMesh(coverSize, coverThick)
         if autoBarMesh==True:
             barFiber, barXListPlot, barYListPlot = sectInstance.barMesh(outBarD, outBarDist, coverThick, inBarD, inBarDist)
@@ -241,8 +163,9 @@ def polygonSection(sectionName,outSideNode,outSideEle,coverThick,coreSize,coverS
                     [inNodeReturnPlot[i1][1], outNodeReturnPlot[i1][1]],
                     coverColor, linewidth=lineWid, zorder=0)
         ax.scatter(barXListPlot, barYListPlot, s=barMarkSize, c=barColor, linewidth=lineWid, zorder=2)
-        plt.savefig(sectionName+".eps")
-        plt.savefig(sectionName+".jpg")
+        if sectionName is not None:
+            plt.savefig(sectionName+".eps")
+            plt.savefig(sectionName+".jpg")
         plt.show()
     elif inSideNode!=None and plot==True:
         w, h = figureSize(outSideNode)
@@ -265,119 +188,121 @@ def polygonSection(sectionName,outSideNode,outSideEle,coverThick,coreSize,coverS
                     [inNodeReturnPlot[i1][1], outNodeReturnPlot[i1][1]],
                     coverColor, linewidth=lineWid, zorder=0)
         ax.scatter(barXListPlot, barYListPlot, s=barMarkSize, c=barColor, linewidth=lineWid, zorder=2)
-        plt.savefig(sectionName+".eps")
-        plt.savefig(sectionName+".jpg")
+        if sectionName is not None:
+            plt.savefig(sectionName+".eps")
+            plt.savefig(sectionName+".jpg")
         plt.show()
 
     else:
         pass
     return coreFiber,coverFiber,barFiber
-######################################################################################
-# if __name__ == "__main__":
+
+if __name__ == "__main__":
     ###################---solid circle---################
-    ####################################################
-    # outD=2  # the diameter of the outside circle
-    # coverThick=0.1  # the thinckness of the cover concrete
-    # outbarD=0.03  # outside bar diameter
-    # outbarDist=0.15  # outside bar space
-    # coreSize=0.2  # the size of core concrete fiber
-    # coverSize=0.2  # the size of cover concrete fiber
-    # plotState=True  # plot the fiber or not plot=True or False
-    # corFiber,coverFiber,barFiber=circleSection(outD, coverThick, outbarD, outbarDist, coreSize, coverSize,plotState)
-    ###################---circle with a hole ---################
-    ####################################################
-    # outD = 2  # the diameter of the outside circle
-    # coverThick = 0.06  # the thinckness of the cover concrete
-    # outbarD = 0.03  # outside bar diameter
-    # outbarDist = 0.15  # outside bar space
-    # coreSize = 0.1  # the size of core concrete fiber
-    # coverSize = 0.1  # the size of cover concrete fiber
-    # plotState = True  # plot the fiber or not plot=True or False
-    # inD =1 # the diameter of the inside circle
-    # inBarD=0.03 # inside bar diameter
-    # inBarDist=0.15 # inside bar space
-    # corFiber, coverFiber, barFiber = circleSection(outD, coverThick, outbarD, outbarDist, coreSize, coverSize,
-    #                                                plotState,inD,inBarD,inBarDist)
-    # ############---solid polygon section ---############
-    ####################################################
+    #
+    outD=2  # the diameter of the outside circle
+    coverThick=0.1  # the thinckness of the cover concrete
+    outbarD=0.03  # outside bar diameter
+    outbarDist=0.15  # outside bar space
+    coreSize=0.2  # the size of core concrete fiber
+    coverSize=0.2  # the size of cover concrete fiber
+    plotState=True  # plot the fiber or not plot=True or False
+    corFiber,coverFiber,barFiber=circleSection(outD, coverThick, outbarD, outbarDist, coreSize, coverSize,plotState)
+    ###################---circle with a hole
+    #
+    outD = 2  # the diameter of the outside circle
+    coverThick = 0.06  # the thinckness of the cover concrete
+    outbarD = 0.03  # outside bar diameter
+    outbarDist = 0.15  # outside bar space
+    coreSize = 0.1  # the size of core concrete fiber
+    coverSize = 0.1  # the size of cover concrete fiber
+    plotState = True  # plot the fiber or not plot=True or False
+    inD =1 # the diameter of the inside circle
+    inBarD=0.03 # inside bar diameter
+    inBarDist=0.15 # inside bar space
+    corFiber, coverFiber, barFiber = circleSection(outD, coverThick, outbarD, outbarDist, 
+                                                   coreSize, coverSize,
+                                                   plotState,inD,inBarD,inBarDist)
+    # ############---solid polygon section
+    #
 #     # the outside vertexes consecutively numbering and coordinate values in local y-z plane in dict container
-#     outSideNode = {1: (3.5, 3), 2: (1.5, 5), 3: (-1.5, 5), 4: (-3.5, 3), 5: (-3.5, -3), 6: (-1.5, -5), 7: (1.5, -5),
-#                    8: (3.5, -3)}
+    outSideNode = {1: (3.5, 3), 2: (1.5, 5), 3: (-1.5, 5), 4: (-3.5, 3), 5: (-3.5, -3), 6: (-1.5, -5), 7: (1.5, -5),
+                   8: (3.5, -3)}
 #     # the outside vertexes loop consecutively numbering in dict container
-#     outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 1)}
-#     coverThick = 0.06  # the thinck of the cover concrete
-#     coreSize = 0.2  # the size of the core concrete fiber elements
-#     coverSize = 0.3  # the size of the cover concrete fiber elements
-#     outBarD = 0.032  # outside bar diameter
-#     outBarDist = 0.2  # outside bar space
-#     plotState=True  # plot the fiber or not plot=True or False
-#     autoBarMesh=True #if false provide the barControlNodeDict and barEleDict
-#     userBarNodeDict=None
-#     userBarEleDict=None
-#     coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
-#                                         outBarD, outBarDist,plotState,autoBarMesh)
-    #####################################################################
+    outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 1)}
+    coverThick = 0.06  # the thinck of the cover concrete
+    coreSize = 0.2  # the size of the core concrete fiber elements
+    coverSize = 0.3  # the size of the cover concrete fiber elements
+    outBarD = 0.032  # outside bar diameter
+    outBarDist = 0.2  # outside bar space
+    plotState=True  # plot the fiber or not plot=True or False
+    autoBarMesh=True #if false provide the barControlNodeDict and barEleDict
+    userBarNodeDict=None
+    userBarEleDict=None
+    coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
+                                        outBarD, outBarDist,plotState,autoBarMesh)
+
     ############---polygon with one hole section user bar mesh example---##############
      # the outside vertexes consecutively numbering and coordinate values in local y-z plane in dict container
-#     outSideNode = {1: (2.559, 2.1), 2: (-2.559, 2.1), 3: (-2.559, 1.6), 4: (-3.059, 1.6), 5: (-3.059, -1.6),
-#                    6: (-2.559, -1.6), 7: (-2.559, -2.1), 8: (2.559, -2.1), 9: (2.559, -1.6), 10: (3.059, -1.6), 11: (3.059, 1.6),
-#                    12: (2.559, 1.6)}
-#     # the outside vertexes loop consecutively numbering in dict container
-#     outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 9), 9: (9, 10),\
-#                   10: (10, 11), 11: (11, 12), 12: (12, 1)}
-#     # the inside vertexes consecutively numbering and coordinate values in local y-z plane in list container
-#     inSideNode = [{1: (1.809, 1.35), 2: (-1.809, 1.35), 3: (-2.309, 0.85), 4: (-2.309, -0.85), 5: (-1.809, -1.35), \
-#                    6: (1.809, -1.35), 7: (2.309, -0.85), 8: (2.309, 0.85)}] ##(None)
-#     # the inside vertexes loop consecutively numbering in dict container
-#     inSideEle = [{1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 1)}]
-#     coverThick = 0.06  # the thinck of the cover concrete
-#     coreSize = 0.2  # the size of the core concrete fiber elements
-#     coverSize = 0.3  # the size of the cover concrete fiber elements
-#     outBarD = 0.032  # outside bar diameter(None)
-#     outBarDist = 0.2  # outside bar space (None)
-#     plotState=True  # plot the fiber or not plot=True or False
-#     autoBarMesh=False #if false provide the barControlNodeDict and barEleDict
-#     userBarNodeDict={1: (2.975, 1.516), 2: (2.475, 1.516), 3: (2.475, 2.016), 4: (-2.475, 2.016), 5: (-2.475, 1.516),
-#                    6: (-2.975, 1.516),7: (-2.975, -1.516), 8: (-2.475, -1.516), 9: (-2.475, -2.016), 10: (2.475, -2.016),
-#                    11: (2.475, -1.516), 12: (2.975, -1.516)} #{1:(y1,z1),2:(y2,z2),...} （None)
-#     userBarEleDict={1: (1, 2,0.01,0.2), 2: (2, 3,0.01,0.2), 3: (3, 4,0.01,0.2), 4: (4, 5,0.01,0.2),\
-#                     5: (6, 5,0.01,0.2), 6: (5, 2,0.01,0.2), 7: (7, 8,0.01,0.2), 8: (8, 9,0.01,0.2), 9: (9, 10,0.01,0.2),
-#                   10: (10, 11,0.01,0.2), 11: (12, 11,0.01,0.2), 12: (11, 8,0.01,0.2),\
-#                     }  #{1:(nodeI,nodeJ,barD,barDist)}（None)
-#     inBarD=0.032  # inside bar diameter (None)
-#     inBarDist=0.2  # inside bar space (None)
-#     coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
-#                                         outBarD, outBarDist,plotState,autoBarMesh,userBarNodeDict,userBarEleDict,\
-#             inSideNode,inSideEle,inBarD,inBarDist)
-    #####################################################################
+    outSideNode = {1: (2.559, 2.1), 2: (-2.559, 2.1), 3: (-2.559, 1.6), 4: (-3.059, 1.6), 5: (-3.059, -1.6),
+                   6: (-2.559, -1.6), 7: (-2.559, -2.1), 8: (2.559, -2.1), 9: (2.559, -1.6), 10: (3.059, -1.6), 11: (3.059, 1.6),
+                   12: (2.559, 1.6)}
+    # the outside vertexes loop consecutively numbering in dict container
+    outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 9), 9: (9, 10),\
+                  10: (10, 11), 11: (11, 12), 12: (12, 1)}
+    # the inside vertexes consecutively numbering and coordinate values in local y-z plane in list container
+    inSideNode = [{1: (1.809, 1.35), 2: (-1.809, 1.35), 3: (-2.309, 0.85), 4: (-2.309, -0.85), 5: (-1.809, -1.35), \
+                   6: (1.809, -1.35), 7: (2.309, -0.85), 8: (2.309, 0.85)}] ##(None)
+    # the inside vertexes loop consecutively numbering in dict container
+    inSideEle = [{1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 5), 5: (5, 6), 6: (6, 7), 7: (7, 8), 8: (8, 1)}]
+    coverThick = 0.06  # the thinck of the cover concrete
+    coreSize = 0.2  # the size of the core concrete fiber elements
+    coverSize = 0.3  # the size of the cover concrete fiber elements
+    outBarD = 0.032  # outside bar diameter(None)
+    outBarDist = 0.2  # outside bar space (None)
+    plotState=True  # plot the fiber or not plot=True or False
+    autoBarMesh=False #if false provide the barControlNodeDict and barEleDict
+    userBarNodeDict={1: (2.975, 1.516), 2: (2.475, 1.516), 3: (2.475, 2.016), 4: (-2.475, 2.016), 5: (-2.475, 1.516),
+                   6: (-2.975, 1.516),7: (-2.975, -1.516), 8: (-2.475, -1.516), 9: (-2.475, -2.016), 10: (2.475, -2.016),
+                   11: (2.475, -1.516), 12: (2.975, -1.516)} #{1:(y1,z1),2:(y2,z2),...} （None)
+    userBarEleDict={1: (1, 2,0.01,0.2), 2: (2, 3,0.01,0.2), 3: (3, 4,0.01,0.2), 4: (4, 5,0.01,0.2),\
+                    5: (6, 5,0.01,0.2), 6: (5, 2,0.01,0.2), 7: (7, 8,0.01,0.2), 8: (8, 9,0.01,0.2), 9: (9, 10,0.01,0.2),
+                  10: (10, 11,0.01,0.2), 11: (12, 11,0.01,0.2), 12: (11, 8,0.01,0.2),\
+                    }  #{1:(nodeI,nodeJ,barD,barDist)}（None)
+    inBarD=0.032  # inside bar diameter (None)
+    inBarDist=0.2  # inside bar space (None)
+    coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
+                                        outBarD, outBarDist,plotState,autoBarMesh,userBarNodeDict,userBarEleDict,\
+            inSideNode,inSideEle,inBarD,inBarDist)
+    ##################
     # ############---polygon with three holes section example---###########
-#     outSideNode = {1: (0, 0), 2: (7, 0), 3: (7,3), 4: (0, 3)}
-#     # the outside vertexes loop consecutively numbering in dict container
-#     outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4,1)}
-#     # the inside vertexes consecutively numbering and coordinate values in local y-z plane in list container
-#     inSideNode = [
-#         {1: (1, 1), 2: (2, 1), 3: (2, 2), 4: (1, 2)},
-#         {1: (3, 1), 2: (4, 1), 3: (4, 2), 4: (3, 2)},
-#         {1: (5, 1), 2: (6, 1), 3: (6, 2), 4: (5, 2)}]
-#     # the inside vertexes loop consecutively numbering in dict container
-#     inSideEle = [{1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)},
-#                  {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)},
-#                  {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)}]
-#     coverThick = 0.06  # the thinck of the cover concrete
-#     coreSize = 0.2  # the size of the core concrete fiber elements
-#     coverSize = 0.3  # the size of the cover concrete fiber elements
-#     outBarD = 0.032  # outside bar diameter
-#     outBarDist = 0.2  # outside bar space
-#     plotState = True  # plot the fiber or not plot=True or False
-#     autoBarMesh=True #if false provide the barControlNodeDict and barEleDict
-#     userBarNodeDict=None
-#     userBarEleDict=None
-#     inBarD=0.032  # inside bar diameter (None)
-#     inBarDist=0.2  # inside bar space (None)
-#     coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
-#                                         outBarD, outBarDist,plotState,autoBarMesh,userBarNodeDict,userBarEleDict,\
-#             inSideNode,inSideEle,inBarD,inBarDist)
-    #####################################################################
+    outSideNode = {1: (0, 0), 2: (7, 0), 3: (7,3), 4: (0, 3)}
+    # the outside vertexes loop consecutively numbering in dict container
+    outSideEle = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4,1)}
+    # the inside vertexes consecutively numbering and coordinate values in local y-z plane in list container
+    inSideNode = [
+        {1: (1, 1), 2: (2, 1), 3: (2, 2), 4: (1, 2)},
+        {1: (3, 1), 2: (4, 1), 3: (4, 2), 4: (3, 2)},
+        {1: (5, 1), 2: (6, 1), 3: (6, 2), 4: (5, 2)}]
+    # the inside vertexes loop consecutively numbering in dict container
+    inSideEle = [{1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)},
+                 {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)},
+                 {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (4, 1)}]
+    coverThick = 0.06  # the thinck of the cover concrete
+    coreSize = 0.2  # the size of the core concrete fiber elements
+    coverSize = 0.3  # the size of the cover concrete fiber elements
+    outBarD = 0.032  # outside bar diameter
+    outBarDist = 0.2  # outside bar space
+    plotState = True  # plot the fiber or not plot=True or False
+    autoBarMesh=True #if false provide the barControlNodeDict and barEleDict
+    userBarNodeDict=None
+    userBarEleDict=None
+    inBarD=0.032  # inside bar diameter (None)
+    inBarDist=0.2  # inside bar space (None)
+    coreFiber,coverFiber,barFiber=polygonSection(outSideNode, outSideEle, coverThick, coreSize, coverSize,\
+                                        outBarD, outBarDist,plotState,autoBarMesh,userBarNodeDict,userBarEleDict,\
+            inSideNode,inSideEle,inBarD,inBarDist)
+    ##################
     # print(help(polygonSection))
 
 

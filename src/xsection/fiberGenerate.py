@@ -14,9 +14,9 @@ import pygmsh
 import meshio
 import matplotlib.tri as tri
 from pointInPolygon import is_in_2d_polygon
-########################################################################################################################
-########################################################################################################################
-class CircleSection():
+
+
+class CircleSection:
     """
     Circle section fibers generate
     Input: ax-axes
@@ -37,10 +37,11 @@ class CircleSection():
     outD = 3  # the diameter of the outside circle
     circleInstance = CircleSection(ax, d0, outD)  # call the circle section generate class
     circleInstance.initSectionPlot()  # plot profile of the circle
-    coreFiber = circleInstance.coreMesh(eleSize)  # generate core concrete fiber elements [(x1,y1,area1),...]
+    coreFiber = circleInstance.core_mesh(eleSize)  # generate core concrete fiber elements [(x1,y1,area1),...]
     coverFiber = circleInstance.coverMesh(coverSize)  # generate cover concrete fiber elements [(x1,y1,area1),...]
     barFiber = circleInstance.barMesh(outbarD, outbarDist)  # generate the bar fiber elements [(x1,y1,area1),...]
     plt.show()
+
     #######################---torus section example---#########################
     from fiberGenerate import CircleSection
     import matplotlib.pyplot as plt
@@ -57,12 +58,12 @@ class CircleSection():
     inD = 1  # the diameter of the inner circle
     circleInstance = CircleSection(ax, d0, outD, inD)  # call the circle section generate class
     circleInstance.initSectionPlot()  # plot profile of the circle
-    coreFiber = circleInstance.coreMesh(coreSize)  # generate core concrete fiber elements
+    coreFiber = circleInstance.core_mesh(coreSize)  # generate core concrete fiber elements
     coverFiber = circleInstance.coverMesh(coverSize)  # generate cover concrete fiber elements
     barFiber = circleInstance.barMesh(outbarD, outbarDist, inBarD, inBarDist)  # generate the bar fiber elements
     plt.show()
     """
-    ####################################################
+
     def __init__(self, coverThick, outDiameter, innerDiameter=None):
         """
         Initialize the class
@@ -70,7 +71,7 @@ class CircleSection():
         self.coverThick = coverThick
         self.outDiameter = outDiameter
         self.innerDiameter = innerDiameter
-    ####################################################
+
     def initSectionPlot(self):
         """
         Plot the original section
@@ -88,7 +89,7 @@ class CircleSection():
             xListPlot.append(inxList)
             yListPlot.append(inyList)
         return xListPlot,yListPlot
-    ####################################################
+
     def _triEleInfo(self,points, triangles):
         """
         Calculate the area and the centroid coordinates of triangle element
@@ -111,34 +112,32 @@ class CircleSection():
             yc = (y1 + y2 + y3) / 3.0
             inFoList.append((xc, yc, area))
         return inFoList
-    ####################################################
-    def coreMesh(self,eleSize):
+
+    def core_mesh(self, eleSize):
         """
         Core concrete fiber generate
         Input: eleSize- fiber element size
         Output: coreFiberInfo:core concrete fiber elment informaiton [(xc1,yc1,area1),(xc2,yc2,area2)]
         """
         outDiameterNew = self.outDiameter - self.coverThick * 2.0
+        print(outDiameterNew)
         if self.innerDiameter != None:
             innerDiameterNew = self.innerDiameter + self.coverThick * 2.0
-            geom = pygmsh.opencascade.Geometry()
-            diskOut = geom.add_disk([0.0, 0.0, 0.0], outDiameterNew/2.0, radius1=None, char_length=eleSize)
-            diskInner = geom.add_disk([0.0,0.0, 0.0], innerDiameterNew/2.0, radius1=None, char_length=eleSize)
-            geom.boolean_difference([diskOut], [diskInner])
-            mesh = pygmsh.generate_mesh(geom)
-            points=mesh.points
-            triangles = [each[1] for each in mesh.cells if each.type=='triangle'][0]
-            coreFiberInfo = self._triEleInfo(points, triangles)
+            with pygmsh.occ.Geometry() as geom:
+                diskOut = geom.add_disk([0.0, 0.0, 0.0], outDiameterNew/2.0)#, radius1=None, char_length=eleSize)
+                diskInner = geom.add_disk([0.0,0.0, 0.0], innerDiameterNew/2.0)#, radius1=None)#, char_length=eleSize)
+                geom.boolean_difference([diskOut], [diskInner])
+                mesh = geom.generate_mesh()
         else:
-            geom = pygmsh.opencascade.Geometry()
-            disk = geom.add_disk([0.0, 0.0, 0.0], outDiameterNew / 2.0, radius1=None, char_length=eleSize)
-            mesh = pygmsh.generate_mesh(geom)
+            with pygmsh.occ.Geometry() as geom:
+                disk = geom.add_disk([0.0, 0.0, 0.0], outDiameterNew / 2.0)#, radius1=None)#, char_length=eleSize)
+                mesh = geom.generate_mesh()
 
-            points = mesh.points
-            triangles = [each[1] for each in mesh.cells if each.type=='triangle'][0]
-            coreFiberInfo = self._triEleInfo(points, triangles)
+        points = mesh.points
+        triangles = [block.data for block in mesh.cells if block.type=='triangle'][0]
+        coreFiberInfo = self._triEleInfo(points, triangles)
         return coreFiberInfo,points,triangles
-    ####################################################
+
     def _coverDivide(self, coverSize, pos="out"):
         """
         Cover concrete fiber generate
@@ -152,7 +151,7 @@ class CircleSection():
             Area = (np.pi * self.outDiameter ** 2) / 4.0
             NewArea = (np.pi * DNew ** 2) / 4.0
             nCover = int(circumLength / coverSize)
-            coverArea = (Area - NewArea) / nCover
+            coverArea = (Area - NewArea) / nCover if nCover else 0
             R = self.outDiameter / 2.0
             NewR = DNew / 2.0
         elif pos == "in":
@@ -162,16 +161,17 @@ class CircleSection():
             Area = (np.pi * D ** 2) / 4.0
             NewArea = (np.pi * DNew ** 2) / 4.0
             nCover = int(circumLength / coverSize)
-            coverArea = (NewArea - Area) / nCover
+            coverArea = (NewArea - Area) / nCover if nCover else 0
             R = self.innerDiameter / 2.0
             NewR = DNew / 2.0
         else:
-            print("Please select pos=out or pos=in!")
-        Angle = 2 * np.pi / nCover
+            raise ValueError("Please select pos=out or pos=in!")
+
+        Angle = 2 * np.pi / nCover if nCover else 0
         NodeList = [(R * np.cos(Angle * i1), R * np.sin(Angle * i1)) for i1 in range(nCover)]
         NewNodeList = [(NewR * np.cos(Angle * i2), NewR * np.sin(Angle * i2)) for i2 in range(nCover)]
         fiberNCover = nCover
-        fiberAngle = (2 * np.pi) / fiberNCover
+        fiberAngle = (2 * np.pi) / fiberNCover if fiberNCover else 0
         FiberRadius = (D + DNew) / 4.0
         FiberXList = [FiberRadius * np.cos((2 * i3 - 1) * 0.5 * fiberAngle) for i3 in range(1, fiberNCover + 1)]
         FiberYList = [FiberRadius * np.sin((2 * i4 - 1) * 0.5 * fiberAngle) for i4 in range(1, fiberNCover + 1)]
@@ -266,9 +266,9 @@ class CircleSection():
             barXListPlot.append(inFiberXList)
             barYListPlot.append(inFiberYList)
         return barFiberInfo,barXListPlot,barYListPlot
-########################################################################################################################
-########################################################################################################################
-class PolygonSection():
+
+
+class PolygonSection:
     """
 	Polygon section fiber mesh (bar, core conrete and cover concrete)
 	###########################---Polygon section example---######################################
@@ -289,7 +289,7 @@ class PolygonSection():
     sectInstance = PolygonSection(ax, outSideNode, outSideEle)
     sectInstance.sectPlot()
     outLineList = sectInstance.coverLinePlot(coverThick)
-    coreFiber = sectInstance.coreMesh(coreSize, outLineList)
+    coreFiber = sectInstance.core_mesh(coreSize, outLineList)
     coverFiber = sectInstance.coverMesh(coverSize, coverThick)
     barFiber = sectInstance.barMesh(outBarD, outBarDist,coverThick)
     plt.show()
@@ -318,7 +318,7 @@ class PolygonSection():
     sectInstance.sectPlot()
     outLineList = sectInstance.coverLinePlot(coverThick)
     inLineList = sectInstance.innerLinePlot(coverThick)
-    coreFiber = sectInstance.coreMesh(coreSize, outLineList, inLineList)
+    coreFiber = sectInstance.core_mesh(coreSize, outLineList, inLineList)
     coverFiber = sectInstance.coverMesh(coverSize, coverThick)
     barFiber = sectInstance.barMesh(outBarD, outBarDist,coverThick, inBarD, inBarDist)
     plt.show()
@@ -351,7 +351,7 @@ class PolygonSection():
     sectInstance.sectPlot()
     outLineList = sectInstance.coverLinePlot(coverThick)
     inLineList = sectInstance.innerLinePlot(coverThick)
-    coreFiber = sectInstance.coreMesh(coreSize, outLineList, inLineList)
+    coreFiber = sectInstance.core_mesh(coreSize, outLineList, inLineList)
     coverFiber = sectInstance.coverMesh(coverSize, coverThick)
     barFiber = sectInstance.barMesh(outBarD, outBarDist,coverThick, inBarD, inBarDist)
     plt.show()
@@ -560,7 +560,7 @@ class PolygonSection():
             inFoList.append((xc, yc, area))
         return inFoList
     ####################################################
-    def coreMesh(self, eleSize, outLineList, inLineList=None):
+    def core_mesh(self, eleSize, outLineList, inLineList=None):
         """
         Core concrete mesh
         Input:
@@ -575,26 +575,26 @@ class PolygonSection():
         outNOdeList=[[outLineList[i1][0],outLineList[i1][1],0] for i1 in range(len(outLineList))]
 
         if inLineList == None:
-            geom = pygmsh.opencascade.Geometry()
-            geom.add_polygon(outNOdeList,lcar=eleSize)
-            mesh = pygmsh.generate_mesh(geom)
+            with pygmsh.occ.Geometry() as geom:
+                geom.add_polygon(outNOdeList)#,lcar=eleSize)
+                mesh = geom.generate_mesh()
             points = mesh.points
-            triangles = [each[1] for each in mesh.cells if each.type=='triangle'][0]
+            triangles = [block.data for block in mesh.cells if block.type=='triangle'][0]
             triEleInfoList = self._triEleInfo(points, triangles)
         else:
-            geom=pygmsh.opencascade.Geometry()
-            outPolygon=geom.add_polygon(outNOdeList, lcar=eleSize)
-            for eachInnerList in inLineList:
-                inNodeList = [[eachInnerList[i2][0], eachInnerList[i2][1], 0] for i2 in range(len(eachInnerList))]
-                inPolygon=geom.add_polygon(inNodeList, lcar=eleSize)
-                differencePolygon=geom.boolean_difference([outPolygon],[inPolygon])
-                outPolygon=differencePolygon
-            mesh = pygmsh.generate_mesh(geom)
+            with pygmsh.occ.Geometry() as geom:
+                outPolygon=geom.add_polygon(outNOdeList)#, lcar=eleSize)
+                for eachInnerList in inLineList:
+                    inNodeList = [[eachInnerList[i2][0], eachInnerList[i2][1], 0] for i2 in range(len(eachInnerList))]
+                    inPolygon=geom.add_polygon(inNodeList)#, lcar=eleSize)
+                    differencePolygon=geom.boolean_difference(outPolygon,inPolygon)
+                    outPolygon=differencePolygon
+                mesh = geom.generate_mesh()
             points = mesh.points
-            triangles = [each[1] for each in mesh.cells if each.type=='triangle'][0]
+            triangles = [block.data for block in mesh.cells if block.type=='triangle'][0]
             triEleInfoList = self._triEleInfo(points, triangles)
         return triEleInfoList,points,triangles
-    ####################################################
+
     def _coverDivide(self, outNodeDict, inNodeDict, eleDict, eleSize, coverThick):
         """
         cover conrete fiber divide
@@ -817,7 +817,7 @@ class PolygonSection():
             XListInfo+=XList
             YListInfo+=YList
         return barFiberInfo, XListInfo,YListInfo
-########################################################################################################################
+
 def figureSize(outSideNode):
     """
     calculate the window width and height
@@ -832,5 +832,4 @@ def figureSize(outSideNode):
     w=np.abs(maxX-minX)
     h=np.abs(maxY-minY)
     return [w,h]
-########################################################################################################################
-########################################################################################################################
+
