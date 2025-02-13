@@ -1,10 +1,9 @@
-#-*-coding: UTF-8-*-
 ######################################################################################
 #  Author: Junjun Guo
 #  E-mail: guojj@tongji.edu.cn/guojj_ce@163.com
 #  Date: 05/02/2020
 ######################################################################################
-# import necessary modules
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import solve
@@ -12,7 +11,6 @@ import math
 import time
 import pygmsh
 import meshio
-import matplotlib.tri as tri
 from pointInPolygon import is_in_2d_polygon
 
 
@@ -24,44 +22,6 @@ class CircleSection:
           outD-outside diameter (m)
           inD-inner diameter (m)
           if inD==None,the section is solid circle, otherwise is torus
-    #######################---solid section circle example---#########################
-    from fiberGenerate import CircleSection
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.add_subplot(111)
-    outbarD = 0.03  # outside bar diameter
-    outbarDist = 0.15  # outside bar space
-    d0 = 0.06  # the thinckness of the cover concrete
-    eleSize = 0.15  # the size of core concrete fiber
-    coverSize = 0.15  # the size of cover concrete fiber
-    outD = 3  # the diameter of the outside circle
-    circleInstance = CircleSection(ax, d0, outD)  # call the circle section generate class
-    circleInstance.initSectionPlot()  # plot profile of the circle
-    coreFiber = circleInstance.core_mesh(eleSize)  # generate core concrete fiber elements [(x1,y1,area1),...]
-    coverFiber = circleInstance.coverMesh(coverSize)  # generate cover concrete fiber elements [(x1,y1,area1),...]
-    barFiber = circleInstance.barMesh(outbarD, outbarDist)  # generate the bar fiber elements [(x1,y1,area1),...]
-    plt.show()
-
-    #######################---torus section example---#########################
-    from fiberGenerate import CircleSection
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.add_subplot(111)
-    outbarD = 0.03  # outside bar diameter
-    outbarDist = 0.15  # outside bar space
-    inBarD = 0.03  # inside bar diameter
-    inBarDist = 0.15  # inside bar space
-    d0 = 0.1  # the thinckness of the cover concrete
-    coreSize = 0.15  # the size of core concrete fiber
-    coverSize = 0.15  # the size of cover concrete fiber
-    outD = 3  # the diameter of the outside circle
-    inD = 1  # the diameter of the inner circle
-    circleInstance = CircleSection(ax, d0, outD, inD)  # call the circle section generate class
-    circleInstance.initSectionPlot()  # plot profile of the circle
-    coreFiber = circleInstance.core_mesh(coreSize)  # generate core concrete fiber elements
-    coverFiber = circleInstance.coverMesh(coverSize)  # generate cover concrete fiber elements
-    barFiber = circleInstance.barMesh(outbarD, outbarDist, inBarD, inBarDist)  # generate the bar fiber elements
-    plt.show()
     """
 
     def __init__(self, coverThick, outDiameter, innerDiameter=None):
@@ -179,7 +139,7 @@ class CircleSection:
         return coverFiberInfo, FiberXList, FiberYList, NodeList, NewNodeList
     ####################################################
 
-    def coverMesh(self, coverSize):
+    def cover_mesh(self, coverSize):
         """
         Cover concrete mesh
         Input:
@@ -199,7 +159,7 @@ class CircleSection:
         borderOutNodeList.append(outNewNodeList[0])
         xBorderPlot.append([each1[0] for each1 in borderOutNodeList])
         yBorderPlot.append([each2[1] for each2 in borderOutNodeList])
-        # self.ax.scatter(outFiberXList,outFiberYList,s=10,c="k",zorder = 2)
+
         for i5 in range(len(outNodeList)):
             xList = [outNodeList[i5][0], outNewNodeList[i5][0]]
             yList = [outNodeList[i5][1], outNewNodeList[i5][1]]
@@ -214,14 +174,14 @@ class CircleSection:
             borderInNodeList.append(inNewNodeList[0])
             xBorderPlot.append([each3[0] for each3 in borderInNodeList])
             yBorderPlot.append([each4[1] for each4 in borderInNodeList])
-            # self.ax.scatter(inFiberXList,inFiberYList,s=10,c="k",zorder = 2)
+
             for i5 in range(len(inNodeList)):
                 xList = [inNodeList[i5][0], inNewNodeList[i5][0]]
                 yList = [inNodeList[i5][1], inNewNodeList[i5][1]]
                 xListPLot.append(xList)
                 yListPlot.append(yList)
         return coverFiberInfo,xListPLot,yListPlot,xBorderPlot,yBorderPlot
-    ####################################################
+
     def _barDivide(self, barD, barDist, pos="out"):
         """
         Bar fiber divide
@@ -241,7 +201,7 @@ class CircleSection:
         fiberYList = [newR * np.sin(angle * i2) for i2 in range(1, nBar + 1)]
         barFiberInfo = [(xb, yb, area) for xb, yb in zip(fiberXList, fiberYList)]
         return barFiberInfo, fiberXList, fiberYList
-    ####################################################
+
     def barMesh(self, outBarD, outBarDist, inBarD=None, inBarDist=None):
         """
         Bar mesh
@@ -290,7 +250,7 @@ class PolygonSection:
     sectInstance.sectPlot()
     outLineList = sectInstance.coverLinePlot(coverThick)
     coreFiber = sectInstance.core_mesh(coreSize, outLineList)
-    coverFiber = sectInstance.coverMesh(coverSize, coverThick)
+    coverFiber = sectInstance.cover_mesh(coverSize, coverThick)
     barFiber = sectInstance.barMesh(outBarD, outBarDist,coverThick)
     plt.show()
     ###########################---PolygonHole section example---######################################
@@ -317,9 +277,9 @@ class PolygonSection:
     sectInstance = PolygonSection(ax, outSideNode, outSideEle, inSideNode, inSideEle)
     sectInstance.sectPlot()
     outLineList = sectInstance.coverLinePlot(coverThick)
-    inLineList = sectInstance.innerLinePlot(coverThick)
+    inLineList = sectInstance.plot_inner_edge(coverThick)
     coreFiber = sectInstance.core_mesh(coreSize, outLineList, inLineList)
-    coverFiber = sectInstance.coverMesh(coverSize, coverThick)
+    coverFiber = sectInstance.cover_mesh(coverSize, coverThick)
     barFiber = sectInstance.barMesh(outBarD, outBarDist,coverThick, inBarD, inBarDist)
     plt.show()
     ###########################---PolygonTwoHole section example---######################################
@@ -350,9 +310,9 @@ class PolygonSection:
     sectInstance = PolygonSection(ax, outSideNode, outSideEle, inSideNode, inSideEle)
     sectInstance.sectPlot()
     outLineList = sectInstance.coverLinePlot(coverThick)
-    inLineList = sectInstance.innerLinePlot(coverThick)
+    inLineList = sectInstance.plot_inner_edge(coverThick)
     coreFiber = sectInstance.core_mesh(coreSize, outLineList, inLineList)
-    coverFiber = sectInstance.coverMesh(coverSize, coverThick)
+    coverFiber = sectInstance.cover_mesh(coverSize, coverThick)
     barFiber = sectInstance.barMesh(outBarD, outBarDist,coverThick, inBarD, inBarDist)
     plt.show()
     """
@@ -424,7 +384,7 @@ class PolygonSection:
         coverlineList = self._lineNodeList(outNodeNewDict, outEleDict)
         return returnNodeList,coverlineList
     ####################################################
-    def innerLinePlot(self, coverThick):
+    def plot_inner_edge(self, coverThick):
         """
         Plot the border line of inner cover concrete and core concrete
         Input:
@@ -448,7 +408,7 @@ class PolygonSection:
                 inlineList = inlineList + tempList
             self.inNewNodeDict = innerListDict
             return innerList,inlineList
-    ####################################################
+
     def _pointToLineD(self,a,b,c,nodeIx,nodeIy,nodeJx,nodeJy):
         """
         return the coordinates of the node that in the perpendicular
@@ -464,7 +424,7 @@ class PolygonSection:
         B = np.array([-c1, -c2])
         newNode = list(solve(A, B))
         return newNode
-    ####################################################
+
     def _interNodeCoord(self,nodeDict,coverThick,pos):
         """
         calculate the interline nodes of the polygen section
@@ -521,7 +481,7 @@ class PolygonSection:
         NodeList.insert(0, NodeList[-1])
         del NodeList[-1]
         return NodeList
-    ####################################################
+
     def _middleLineNode(self, nodeDict,coverThick,pos="outLine"):
         """
         calculate the boundary line nodes list
@@ -535,7 +495,7 @@ class PolygonSection:
         ##calculate the interline node coordinates
         newNodeList=self._interNodeCoord(nodeDict, coverThick, pos)
         return newNodeList
-    ####################################################
+
     def _triEleInfo(self, nodeNArray, eleNArray):
         """
         calculate the area and centroid node coordinates of triangular fiber elements
@@ -559,7 +519,7 @@ class PolygonSection:
             yc = (y1 + y2 + y3) / 3.0
             inFoList.append((xc, yc, area))
         return inFoList
-    ####################################################
+
     def core_mesh(self, eleSize, outLineList, inLineList=None):
         """
         Core concrete mesh
@@ -659,8 +619,8 @@ class PolygonSection:
                 (outCenter[0] + inCenter[0]) / 2.0, (outCenter[1] + inCenter[1]) / 2.0, eleArea)
                 centerCoordList.append(centerCoord)
         return centerCoordList, outPlotNode, inPlotNode
-    ####################################################
-    def coverMesh(self, eleSize, coverThick):
+    
+    def cover_mesh(self, eleSize, coverThick):
         """
         cover fiber mesh
         Input:
@@ -689,9 +649,6 @@ class PolygonSection:
         # inside cover concrete divide
         if self.inNode != None:
             nInhole = len(self.inNode)
-            inxList = []
-            inyList = []
-            inareaList = []
             for i4 in range(nInhole):
                 Innerfiber, innerOut, innerIn = self._coverDivide(nodeInDict[i4],\
                         nodeNewInDict[i4], eleInDict[i4],eleSize,coverThick)
@@ -700,9 +657,9 @@ class PolygonSection:
                 innerIn.append(innerIn[0])
                 outNodeReturn = outNodeReturn + innerOut
                 inNodeReturn = inNodeReturn + innerIn
-                # self.ax.scatter(inxList,inyList,s=2,c="r")
+                
         return coverFiberInfo,outNodeReturn,inNodeReturn
-    ####################################################
+    
     def _outBarLineNode(self,barToEdgeDist):
         """
         calculate the outside barLine node coordinates
@@ -713,7 +670,7 @@ class PolygonSection:
         returnNodeList = self._middleLineNode(self.outNode, barToEdgeDist, pos="outLine")
         outBarLineNodeDict = {(i1 + 1): returnNodeList[i1] for i1 in range(len(returnNodeList))}
         return outBarLineNodeDict
-    ####################################################
+
     def _innerBarLineNode(self,barToEdgeDist):
         """
         calculate the inside bar line nodes coordinates
@@ -729,7 +686,7 @@ class PolygonSection:
                 innerList.append(returnNodeList)
                 innerListDict.append({(j1 + 1): returnNodeList[j1] for j1 in range(len(returnNodeList))})
             return innerListDict
-    ####################################################
+
     def _barDivide(self, barD, barDist, nodeDict, lineEleDict):
         """
         bar fiber divide
@@ -768,7 +725,7 @@ class PolygonSection:
                 xReturnList.append(lineBarCoorList[i3][0])
                 yReturnList.append(lineBarCoorList[i3][1])
         return barFiberList, xReturnList, yReturnList
-    ###################################################
+
     def barMesh(self, outBarD, outBarDist,coverThick, inBarD=None, inBarDist=None):
         """
         bar fiber mesh
@@ -799,7 +756,7 @@ class PolygonSection:
                 outXList = outXList + inXList
                 outYList = outYList + inYList
         return barFiberInfo,outXList,outYList
-    ###################################################
+
     def userBarMesh(self, barControlNodeDict,barEleDict):
         """
         manually set the start and end nodes coordinates of each line, bar diameter and distance

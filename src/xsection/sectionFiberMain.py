@@ -2,11 +2,10 @@
 #  Author: Junjun Guo
 #  E-mail: guojj@tongji.edu.cn/guojj_ce@163.com
 #    Date: 05/02/2020
-#  Environemet: Successfully excucted in python 3.8
 ######################################################################################
 import matplotlib.pyplot as plt
 from fiberGenerate import CircleSection,PolygonSection,figureSize
-######################################################################################
+
 def circleSection(outD,coverThick,outbarD,outbarDist,
                   coreSize,coverSize,plot=False,inD=None,inBarD=None,inBarDist=None, file=None):
     """
@@ -54,14 +53,14 @@ def circleSection(outD,coverThick,outbarD,outbarDist,
     ###################
     """
     print(coverThick, outD, inD)
-    circleInstance = CircleSection(coverThick, outD, inD)
-    xListPlot, yListPlot = circleInstance.initSectionPlot()  # plot profile of the circle
+    circle = CircleSection(coverThick, outD, inD)
+    xListPlot, yListPlot = circle.initSectionPlot()  # plot profile of the circle
     # generate core concrete fiber elements
-    coreFiber, pointsPlot, trianglesPlot = circleInstance.core_mesh(coreSize)
+    coreFiber, pointsPlot, trianglesPlot = circle.core_mesh(coreSize)
     # generate cover concrete fiber elements
-    coverFiber, coverXListPlot, coverYListPlot, xBorderPlot, yBorderPlot = circleInstance.coverMesh(coverSize)
+    coverFiber, coverXListPlot, coverYListPlot, xBorderPlot, yBorderPlot = circle.cover_mesh(coverSize)
     # generate the bar fiber elements
-    barFiber, barXListPlot, barYListPlot = circleInstance.barMesh(outbarD, outbarDist, inBarD, inBarDist)
+    barFiber, barXListPlot, barYListPlot = circle.barMesh(outbarD, outbarDist, inBarD, inBarDist)
     if plot==True:
         outSideNode = {1: (-outD,-outD), 2: (outD,outD)}
         w, h = figureSize(outSideNode)
@@ -115,35 +114,36 @@ def polygonSection(outSideNode,outSideEle,coverThick,coreSize,coverSize,outBarD,
        for eaxample coreFiber=[(y1,z1,area1),(y2,y2,area2),...], y1,z1 is the fiber coordinate values in loacal y-z plane
        area1 is the fiber area
     """
-    sectInstance = PolygonSection(outSideNode, outSideEle, inSideNode, inSideEle)
-    originalNodeListPlot = sectInstance.sectPlot()  # [([x1,x2],[y1,y2]),([].[])]
-    outLineList, coverlineListPlot = sectInstance.coverLinePlot(coverThick)
+    sect = PolygonSection(outSideNode, outSideEle, inSideNode, inSideEle)
+    originalNodeListPlot = sect.sectPlot()  # [([x1,x2],[y1,y2]),([].[])]
+    outLineList, coverlineListPlot = sect.coverLinePlot(coverThick)
     if inSideNode==None:
-        sectInstance = PolygonSection(outSideNode, outSideEle)
-        originalNodeListPlot = sectInstance.sectPlot()  # [([x1,x2],[y1,y2]),([].[])]
-        outLineList, coverlineListPlot = sectInstance.coverLinePlot(coverThick)
-        coreFiber, pointsPlot, trianglesPlot = sectInstance.core_mesh(coreSize, outLineList)
-        coverFiber, outNodeReturnPlot, inNodeReturnPlot = sectInstance.coverMesh(coverSize, coverThick)
+        sect = PolygonSection(outSideNode, outSideEle)
+        originalNodeListPlot = sect.sectPlot()  # [([x1,x2],[y1,y2]),([].[])]
+        outLineList, coverlineListPlot = sect.coverLinePlot(coverThick)
+        coreFiber, pointsPlot, trianglesPlot = sect.core_mesh(coreSize, outLineList)
+        coverFiber, outNodeReturnPlot, inNodeReturnPlot = sect.cover_mesh(coverSize, coverThick)
         if autoBarMesh==True:
-            barFiber, barXListPlot, barYListPlot = sectInstance.barMesh(outBarD, outBarDist, coverThick)
+            barFiber, barXListPlot, barYListPlot = sect.barMesh(outBarD, outBarDist, coverThick)
         elif autoBarMesh==False:
-            barFiber, barXListPlot, barYListPlot=sectInstance.userBarMesh(userBarNodeDict,userBarEleDict)
+            barFiber, barXListPlot, barYListPlot=sect.userBarMesh(userBarNodeDict,userBarEleDict)
         else:
-            print("Please input True or False!")
+            raise ValueError("Please input True or False!")
 
     else:
-        sectInstance = PolygonSection(outSideNode, outSideEle, inSideNode, inSideEle)
-        originalNodeListPlot = sectInstance.sectPlot()
-        outLineList, coverlineListPlot = sectInstance.coverLinePlot(coverThick)
-        inLineList, innerLineListPlot = sectInstance.innerLinePlot(coverThick)
-        coreFiber, pointsPlot, trianglesPlot = sectInstance.core_mesh(coreSize, outLineList, inLineList)
-        coverFiber, outNodeReturnPlot, inNodeReturnPlot = sectInstance.coverMesh(coverSize, coverThick)
+        sect = PolygonSection(outSideNode, outSideEle, inSideNode, inSideEle)
+        originalNodeListPlot = sect.sectPlot()
+        outLineList, coverlineListPlot = sect.coverLinePlot(coverThick)
+        inLineList, innerLineListPlot = sect.plot_inner_edge(coverThick)
+        coreFiber, pointsPlot, trianglesPlot = sect.core_mesh(coreSize, outLineList, inLineList)
+        coverFiber, outNodeReturnPlot, inNodeReturnPlot = sect.cover_mesh(coverSize, coverThick)
         if autoBarMesh==True:
-            barFiber, barXListPlot, barYListPlot = sectInstance.barMesh(outBarD, outBarDist, coverThick, inBarD, inBarDist)
+            barFiber, barXListPlot, barYListPlot = sect.barMesh(outBarD, outBarDist, coverThick, inBarD, inBarDist)
         elif autoBarMesh==False:
-            barFiber, barXListPlot, barYListPlot=sectInstance.userBarMesh(userBarNodeDict,userBarEleDict)
+            barFiber, barXListPlot, barYListPlot=sect.userBarMesh(userBarNodeDict,userBarEleDict)
         else:
-            print("Please input True or False!")
+            raise TypeError("Please input True or False!")
+
     if inSideNode==None and plot==True:
         w, h = figureSize(outSideNode)
         fig = plt.figure(figsize=(w, h))
@@ -207,7 +207,8 @@ if __name__ == "__main__":
     coreSize=0.2  # the size of core concrete fiber
     coverSize=0.2  # the size of cover concrete fiber
     plotState=True  # plot the fiber or not plot=True or False
-    corFiber,coverFiber,barFiber=circleSection(outD, coverThick, outbarD, outbarDist, coreSize, coverSize,plotState)
+    corFiber,coverFiber,barFiber=circleSection(outD, coverThick, outbarD, outbarDist, 
+                                               coreSize, coverSize,plotState)
     ###################---circle with a hole
     #
     outD = 2  # the diameter of the outside circle
