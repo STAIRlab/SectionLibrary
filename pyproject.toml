@@ -17,6 +17,8 @@ keywords = [
 install_requires = [
   "numpy",
   "quakeio",
+  "shps",
+  "veux",
   "matplotlib",
   "plotly",
   "opensees",
